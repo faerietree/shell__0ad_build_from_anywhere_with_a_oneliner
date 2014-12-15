@@ -1,0 +1,140 @@
+#!/bin/bash
+
+
+############################
+# INPUTS
+############################
+
+echo "------- INPUTS -------"
+#SCRIPT=$0
+IS_DEBUG="" #$1     # <-- First parameter initiates DEBUG build instead of the default RELEASE.
+CPU_COUNT=1 #$2
+JOBS=$((CPU_COUNT + 1))
+AD=""
+
+# Parse the arguments given to this script:
+#for i # <- for each  argument, terminate if no more arguments, see below
+while :
+do
+    echo $1 #use $i
+    # Note: Empty space is the delimiter! => $1 is first, after space is $2.
+    case $1 in
+        -h | --help | -\?)
+            #TODO create help function to call.
+            exit 0      	# This is not an error, User asked for help. Don't "exit 1"
+            ;;
+        --prefix)
+            AD=$2
+	    shift 2
+            ;;
+		--prefix=*)
+            AD=${1#*=}        # Deletes everything before first occurrence of = (inclusively).
+            shift
+			;;
+        -f | --file)
+            AD=$2     	# TODO check if file exists and is what is expected.
+            shift 2
+            ;;
+        --file=*)
+            AD=${1#*=}        # Delete everything up till "="
+            shift
+            ;;
+
+		--debug)
+            IS_DEBUG=true
+            shift
+            ;;
+		
+		--cpu_count=*)
+			CPU_COUNT=${1#*=}
+			shift
+			;;
+
+		-j*)
+			JOBS=${1#*j}
+			shift
+			;;
+
+        -v | --verbose)
+            # Each instance of -v adds 1 to verbosity
+            verbose=$((verbose+1))
+            shift
+            ;;
+        --) # End of all options
+            shift
+            break
+            ;;
+        -*)
+            printf >&2 'WARN: Unknown option (ignored): %s\n' "$1"
+            shift
+            ;;
+
+        *)  # no more options. Stop while loop. #<-- Note: This must be the last check condition as it matches always.
+            break
+            ;;
+    esac
+done
+
+
+
+# Is a path to 0ad repository defined? Define a custom path via running  'AD=/path/into/0ad-repo/ && build0ad_on_linux.sh' or using --prefix=/path/into/0ad-repo
+if [ "$AD" ] ; then
+  AD="$AD"
+else
+  AD=$HOME"/0ad"   	# TODO automatically look for a 0ad installation / repository. This might be dangerous if recompiling the wrong repo if more than one exists.
+fi
+
+echo "Using 0AD repository location: ""$AD"
+
+
+
+
+
+echo "------- INPUT -END -------"
+
+
+
+
+
+
+echo "------- CHECKS -------"
+############################
+# CHECK 
+############################
+if [ ! "$AD" ]; then
+  printf >&2 "ERROR: option '--prefix /path/into/0ad-repo' not given.\n"
+  exit 1
+fi
+
+
+echo "------- CHECKS -END -------"
+
+
+
+
+
+
+
+
+echo "------- BUILD IGNITION -------"
+############################
+# INITIATE THE 0AD BUILD
+############################
+echo "Updating workspace: ""$AD""/build/workspaces with -j"$JOBS
+cd "$AD/build/workspaces" && ./update-workspaces.sh -j$JOBS    # 2 = 1 + 1 = 1 + #CPU-Cores    <-- 1 might take longer, but it's ensured this will exist, so it's safer.
+cd gcc
+echo "Initiating 0AD build ... "$AD_DEBUG
+if [ "$IS_DEBUG" ] ; then
+    echo "(debug configuration)"
+    make config=debug -j$JOBS    # (see above comment)
+else
+   make -j$JOBS
+fi
+
+# The Release mode builds (which are the default) are more optimised, but are harder to debug. Use
+#make config=debug
+# (and run pyrogenesis_dbg) if you need better debugging support.
+
+echo "------- BUILD IGNITION -END -------"
+echo "If there were errors, seek help in the wildfiregames forums. http://www.wildfiregames.com/forum/"
+echo "Otherwise THE COUNCIL OF MODDERS WISHES HAPPY MODDING. Please contribute improvements back to 0AD. That's the foundation of Open source."
