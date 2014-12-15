@@ -12,6 +12,13 @@ CPU_COUNT=1 #$2
 JOBS=$((CPU_COUNT + 1))
 AD=""
 
+SHALL_UPDATE_REPO=""
+IS_SVN_REPO=""
+REPO_UPDATE_COMMAND="git pull "
+REPO_UPDATE_PARAMS=""
+
+SHALL_CLEAN=""
+
 # Parse the arguments given to this script:
 #for i # <- for each  argument, terminate if no more arguments, see below
 while :
@@ -21,22 +28,30 @@ do
     case $1 in
         -h | --help | -\?)
             #TODO create help function to call.
-            exit 0      	# This is not an error, User asked for help. Don't "exit 1"
+			echo "Use like /path/to/build0ad_on_linux.txt --prefix='$HOME/0ad' --debug -j2 --clean --update_repo --svn --update_params='0ad master'"
+            exit 0    # This is not an error, User asked for help. Don't "exit 1"
             ;;
+			
         --prefix)
             AD=$2
 	    shift 2
             ;;
 		--prefix=*)
-            AD=${1#*=}        # Deletes everything before first occurrence of = (inclusively).
+            AD=${1#*=}    # Deletes everything before first occurrence of = (inclusively).
             shift
 			;;
+
+		--clean)
+			SHALL_CLEAN=true
+			shift
+			;;
+
         -f | --file)
-            AD=$2     	# TODO check if file exists and is what is expected.
+            AD=$2    # TODO check if file exists and is what is expected.
             shift 2
             ;;
         --file=*)
-            AD=${1#*=}        # Delete everything up till "="
+            AD=${1#*=}    # Delete everything up till "="
             shift
             ;;
 
@@ -44,7 +59,32 @@ do
             IS_DEBUG=true
             shift
             ;;
-		
+			
+		--update | --update_repo | --update_repository)
+            SHALL_UPDATE_REPO=true
+            shift
+            ;;
+			
+		--svn)
+			IS_SVN_REPO=true
+			shift
+			;;
+			
+		--update_params=* | --params=*)
+			REPO_UPDATE_PARAMS=${1#*=}; # "0ad master";
+			shift
+			;;
+
+		--update_params | --params)
+			if [ ! "$2" ]; then
+				REPO_UPDATE_PARAMS=""
+				shift
+			else
+				REPO_UPDATE_PARAMS=${2}; # "0ad master";
+				shift 2 
+			fi
+			;;
+			
 		--cpu_count=*)
 			CPU_COUNT=${1#*=}
 			shift
@@ -115,14 +155,45 @@ echo "------- CHECKS -END -------"
 
 
 
+############################
+# UPDATE THE REPOSITORY
+############################
+echo "------- UPDATE REPOSITORY -------"
+if [ "$IS_SVN_REPO" ] ; then
+    echo "(using SVN, enabling repository update)"
+	$SHALL_UPDATE_REPO=true
+	REPO_UPDATE_COMMAND="svn up"
+fi
+
+if [ "$SHALL_UPDATE_REPO" ] ; then
+	COMMAND=$REPO_UPDATE_COMMAND""$REPO_UPDATE_PARAMS
+
+	$COMMAND
+fi
+
+
+echo "------- UPDATE REPOSITORY -END -------"
+
+
+
+
+
 
 echo "------- BUILD IGNITION -------"
 ############################
 # INITIATE THE 0AD BUILD
 ############################
 echo "Updating workspace: ""$AD""/build/workspaces with -j"$JOBS
-cd "$AD/build/workspaces" && ./update-workspaces.sh -j$JOBS    # 2 = 1 + 1 = 1 + #CPU-Cores    <-- 1 might take longer, but it's ensured this will exist, so it's safer.
+cd "$AD/build/workspaces"
+if [ "$SHALL_CLEAN" ] ; then
+	./clean-workspaces.sh    #if errors occur in update-workspaces.sh
+fi
+./update-workspaces.sh -j$JOBS    # 2 = 1 + 1 = 1 + #CPU-Cores    <-- 1 might take longer, but it's ensured this will exist, so it's safer.
+
 cd gcc
+if [ "$SHALL_CLEAN" ] ; then
+	make clean    #if errors occur in make -jx
+fi
 echo "Initiating 0AD build ... "$AD_DEBUG
 if [ "$IS_DEBUG" ] ; then
     echo "(debug configuration)"
