@@ -10,20 +10,25 @@ Compatibility:
 Usage:
 ---------
 Before first run set executable flag:
+
     chmod +x /path/to/buildengine_on_linux.txt
 
-Minimal (assumes location is $HOME/0ad/, no repository update):
+Minimal (assumes location is $HOME/0ad/, with or without repository update):
+
     ~/CoM/buildengine_on_linux.txt
 
     ~/CoM/buildengine_on_linux.txt --update
 
 Specific:
+
     ~/CoM/buildengine_on_linux.txt --prefix=$HOME/0ad/ --update_repo --update_params='0ad master'
 
 Complete:
-    /path/to/buildengine_on_linux.txt --prefix='$HOME/0ad' --debug -j2 --clean --update_repo --update_params='0ad master'"
+
+    /path/to/buildengine_on_linux.txt --prefix='$HOME/0ad' --debug -j2 --clean --update_repo --update_params='0ad master'
 
 For SVN append parameter:
-   --svn
+
+    --svn
 
 

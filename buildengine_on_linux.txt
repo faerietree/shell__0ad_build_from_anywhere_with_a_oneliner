@@ -27,7 +27,7 @@ do
     # Note: Empty space is the delimiter! => $1 is first, after space is $2.
     case $1 in
         -h | --help | -\?)
-            #TODO create help function to call.
+            #TODO create help function to call?
 			echo "Use like /path/to/build0ad_on_linux.txt --prefix='$HOME/0ad' --debug -j2 --clean --update_repo --svn --update_params='0ad master'"
             exit 0    # This is not an error, User asked for help. Don't "exit 1"
             ;;
@@ -166,7 +166,8 @@ if [ "$IS_SVN_REPO" ] ; then
 fi
 
 if [ "$SHALL_UPDATE_REPO" ] ; then
-	COMMAND=$REPO_UPDATE_COMMAND""$REPO_UPDATE_PARAMS
+	cd "$AD"
+	COMMAND=$REPO_UPDATE_COMMAND" "$REPO_UPDATE_PARAMS
 
 	$COMMAND
 fi
